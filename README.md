@@ -12,3 +12,5 @@ relay
 water pump
 # Project worktime
 4 days
+# the pink nerve plant(Fittonia)
+The perfect plant for this project, the name literally means, throws fits, and fits it throws! This species is very sensitive, she is very dramatic when she doesn't get enough water!
