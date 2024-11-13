@@ -24,19 +24,18 @@ TCPClient TheClient;
 // Adafruit.io feeds
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
 // subscription
-Adafruit_MQTT_Subscribe waterFeed = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "feeds/waterFeed");
+Adafruit_MQTT_Subscribe waterFeed = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/waterFeed");
 // publish
-Adafruit_MQTT_Publish airQualFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "feeds/airQualFeed");
-Adafruit_MQTT_Publish humFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "feeds/humFeed");
-Adafruit_MQTT_Publish moistureFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "feeds/mostureFeed");
-Adafruit_MQTT_Publish tempFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "feeds/tempFeed");
+Adafruit_MQTT_Publish airQualFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/airQualFeed");
+Adafruit_MQTT_Publish humFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humFeed");
+Adafruit_MQTT_Publish moistureFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/moistureFeed");
+Adafruit_MQTT_Publish tempFeed = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/tempFeed");
 
 // constants
 const int OLED_RESET = -1;
 const int PUMP = D16;
 const int HEXADDRESS = 0x76;
-const int DHEXADDRESS = 0x3C;
-const int DUSTS = A0;
+const int DUSTS = D4;
 const int HOUR = 600000;
 
 // class
@@ -45,11 +44,11 @@ String dateTime, timeOnly;
 // objects
 Adafruit_SSD1306 display(OLED_RESET);
 Adafruit_BME280 bme;
-AirQualitySensor airQualSens(A1);
+AirQualitySensor airQualSens(A2);
 
 // Variables
 unsigned int startTime1, airValue, duration, lowPulse, currentQual = -1;
-int soilMoist = A2, subValue, tempC, presPA, humRH, tempF, inHG;
+int soilMoist = A1, subValue, tempC, presPA, humRH, tempF, inHG;
 float ratio = 0, concentration = 0;
 bool status;
 
@@ -69,20 +68,19 @@ void setup()
   waitFor(Serial.isConnected, 1000);
 
   bme.begin(HEXADDRESS);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.display();
+  Time.zone(-7);
+  Particle.syncTime();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
   Serial.printf("Ready to go\n");
   status = bme.begin(HEXADDRESS);
   if (status == false)
   {
     Serial.printf("BME280 at address 0x%02X failed to start", HEXADDRESS);
   }
-  Time.zone(-7);
-  Particle.syncTime();
-  display.begin(SSD1306_SWITCHCAPVCC, DHEXADDRESS);
-  display.display();
-  delay(2000);
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
 
   // subscription
   mqtt.subscribe(&waterFeed);
@@ -185,37 +183,57 @@ void dustS(int timeFrame)
 
 void airS(int timeFrame)
 {
-  static unsigned int currentTime, lastTime;
-  currentTime = millis();
+  static unsigned long lastTime = 0;
+  unsigned long currentTime = millis();
 
-  if ((currentTime - lastTime))
+  if ((currentTime - lastTime) >= timeFrame)
   {
-    lastTime = millis();
+    lastTime = currentTime;
+
     airValue = airQualSens.getValue();
     currentQual = airQualSens.slope();
+
+    char qualityStr[50];
+
     switch (currentQual)
     {
     case 0:
-      Serial.printf("Caution! high pollution!\n");
-      airQualFeed.publish("HIGH POLLUTION DETECTED, OH NO! WE'RE GONNA DIE!\n");
+      strcpy(qualityStr, "{\"quality\":\"High Pollution\",\"message\":\"Caution! High pollution detected!\"}");
       break;
-
     case 1:
-      Serial.printf("Pollution rising!\n");
-      airQualFeed.publish("Pollution rising!\n");
+      strcpy(qualityStr, "{\"quality\":\"Rising\",\"message\":\"Pollution rising!\"}");
       break;
-
     case 2:
-      Serial.printf("Low pollution.\n");
-      airQualFeed.publish("Low pollution\n");
+      strcpy(qualityStr, "{\"quality\":\"Low\",\"message\":\"Low pollution.\"}");
       break;
-
     case 3:
-      Serial.printf("Ahh, fresh air!\n");
-      airQualFeed.publish("Ahh, fresh airt!\n");
+      strcpy(qualityStr, "{\"quality\":\"Good\",\"message\":\"Fresh air!\"}");
+      break;
+    default:
+      strcpy(qualityStr, "{\"quality\":\"Unknown\",\"message\":\"Unknown quality\"}");
       break;
     }
+
+    Serial.printf("Air Quality: %s\n", qualityStr);
     Serial.printf("Quant Value = %i\n", airValue);
+
+    // Check MQTT connection before publishing
+    if (!mqtt.connected())
+    {
+      MQTT_connect();
+    }
+
+    // Publish air quality
+    if (!airQualFeed.publish(qualityStr))
+    {
+      Serial.println("Failed to publish air quality");
+    }
+    else
+    {
+      Serial.println("Published air quality successfully");
+    }
+
+    delay(500); // Small delay after publishing
   }
 }
 
