@@ -13,4 +13,4 @@ water pump
 # Project worktime
 4 days
 # the pink nerve plant(Fittonia)
-The perfect plant for this project, the name literally means, throws fits, and fits it throws! This species is very sensitive, she is very dramatic when she doesn't get enough water!
+The perfect plant for this project, the name literally means, throws fits, and fits it throws! This species is very sensitive, she is very dramatic when she doesn't get enough water! The Fittonia was discovered in 1867 by sisters Sara and Elizabeth Fitton. Fittonias come in many colors, the particular one I'm using is pink. Even though these plants are stressed out easily when you forget to water them, the fittonia can increase your sense of calm and reduce stress levels. Fittonia plants are usually 12 to 20 inches tall and symbolize boldness, trustworthiness, and rational thought! The fittonia's network of veins look like the neurological network of a living being, so they are symbolic to the life force. An artificial fittonia is an exicellent gift for someone you respect. They are also a good plant to display in a business as a way to project the idea of trustworthiness of the business subliminally.
